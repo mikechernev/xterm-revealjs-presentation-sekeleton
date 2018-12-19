@@ -1,0 +1,30 @@
+{
+  "name": "xterm-revleal-presentation-sekeleton",
+  "version": "1.0.0",
+  "description": "Presentation skeleton with reveal.js and xterm.js using a shared terminal",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "grunt serve"
+  },
+  "author": {
+    "name": "Mike Chernev",
+    "web": "https://www.mikechernev.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikechernev/xterm-revleal-presentation-sekeleton.git"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "express-ws": "^4.0.0",
+    "grunt": "^1.0.3",
+    "grunt-contrib-watch": "^1.1.0",
+    "grunt-express-server": "^0.5.4",
+    "node-pty": "^0.7.8",
+    "serve-static": "^1.13.2",
+    "xterm": "^3.9.1"
+  }
+}

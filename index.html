@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Mike's cool presentation</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/css/reveal.min.css">
+    <link rel="stylesheet" href="css/theme.css" id="theme">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/lib/css/zenburn.min.css">
+    <link rel="stylesheet" href="node_modules/xterm/dist/xterm.css" />
+    <script type="module">
+        // Import Xterm reqs.
+        import * as attach from './node_modules/xterm/dist/addons/attach/attach.js';
+        import * as fit from './node_modules/xterm/dist/addons/fit/fit.js';
+    </script>
+
+    <!-- Printing and PDF exports -->
+    <script>
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match( /print-pdf/gi ) ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/css/print/pdf.min.css' : 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/css/print/paper.min.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section><h2>Mike's cool presentation</h2></section>
+            <section>
+                <section>
+                    <h2>Some slide with a quote/joke/gif</h2>
+                </section>
+                <!-- Terminal slides MUST have a unique data-state="terminal-*" value. -->
+                <section data-state="terminal-01">
+                    <h5>Terminal 01</h5>
+                    <!--
+                        The terminal will be attached to the first child element with data-is-terminal.
+                        The data-cwd attribute sets a relative or absolute working directory, and is optional.
+                        Relative paths are created in the 'terms' directory in this package as needed.
+                    -->
+                    <div data-is-terminal data-dir="subdir"></div>
+                </section>
+                <section>
+                    <h3>Something funny</h3>
+                </section>
+                <section data-state="terminal-02">
+                    <h5>Terminal 2</h5>
+                    <!--
+                        The terminal will be attached to the first child element with data-is-terminal.
+                        The data-cwd attribute sets a relative or absolute working directory, and is optional.
+                        Relative paths are created in the 'terms' directory in this package as needed.
+                    -->
+                    <div data-is-terminal data-dir="~"></div>
+                </section>
+            </section>
+            <section>
+                <h1>The End!</h1>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/lib/js/head.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/js/reveal.min.js"></script>
+
+    <script defer="true">
+        // Stores all terminal references, added as their slides come into view, by the state name.
+        var initialisedTerminals = {};
+
+
+        Reveal.initialize({
+            // Retain slide info in URL / history.
+            history: true,
+            dependencies: [
+                { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/markdown/marked.js' },
+                { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/markdown/markdown.min.js' },
+                { src: 'notes/notes.js', async: true }, // Cannot use CDN, because it cannot open the notes.html accross origins
+                { src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/highlight/highlight.min.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                { src: 'node_modules/xterm/dist/xterm.js', async: true, callback: function() {
+                    Terminal.applyAddon(attach);
+                    Terminal.applyAddon(fit);
+                    var endpoint = `${location.hostname}:${location.port}`;
+
+                    var terminalUrl = `//${endpoint}/terminal`;
+                    var terminalSections = document.querySelectorAll('section[data-state^="terminal"]');
+                    terminalSections.forEach(function(section) {
+                        var slideId = section.getAttribute('data-state');
+                        var initTerminal = function() {
+
+                            var terminalElement = section.querySelector('*[data-is-terminal]');
+
+                            if (!terminalElement) {
+                                return;
+                            }
+
+                            var desiredDir = terminalElement.getAttribute('data-dir') || '';
+                            var updateTerminal = function(dir) {
+                                console.log(location.pathname)
+                                return fetch(terminalUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        "Content-Type": "application/json; charset=utf-8"
+                                    },
+                                    body: JSON.stringify({dir: dir, location: location.pathname})
+                                });
+                            }
+                            if (initialisedTerminals[slideId]) {
+                                updateTerminal(desiredDir);
+                                return;
+                            }
+
+                            var terminal = initialisedTerminals[slideId] = new Terminal({
+                                'macOptionIsMeta': true,
+                                // TreeHouse colors from https://iterm2colorschemes.com/
+                                'theme': {
+                                    'background': '#212121',
+                                    'foreground': '#8a7d65',
+                                    'cursor': '#fbd015',
+                                    'cursorAccent': '#212121',
+                                    'selection': '#8a7d65',
+                                },
+                                // These can be adjusted for the presentation
+                                'cols': 20,
+                                'rows': 20,
+                                'fontSize': 25
+                            });
+
+                            terminal.on('resize', function(size) {
+                                var cols = size.cols,
+                                    rows = size.rows,
+                                    url = terminalUrl + '/size?cols=' + cols + '&rows=' + rows;
+                                fetch(url, {method: 'POST'});
+                            });
+
+                            terminal.open(terminalElement);
+                            terminal.fit();
+                            Reveal.layout();
+                            updateTerminal(desiredDir)
+                            .then(function () {
+                                var socket = new WebSocket(`ws://${terminalUrl}`);
+                                socket.onopen = function() {
+                                    terminal.attach(socket);
+                                    terminal._initialized = true;
+                                    terminal.fit();
+                                    Reveal.layout();
+                                };
+                            });
+                        };
+                        var setListener = function() {
+                            Reveal.addEventListener(slideId, function() {
+                                setTimeout(initTerminal, 100); // Without the timeout the terminal is not loading (beats me!)
+                            }, false);
+                        };
+
+                        if (Reveal.getCurrentSlide() === section) {
+                            initTerminal();
+                        }
+                        setListener()
+                    });
+                } },
+            ]
+        });
+    </script>
+    <script>
+        // LiveReload Updates (hardcoded).
+        document.write('<script src="http://' + location.hostname +
+        ':35729/livereload.js?snipver=1"></' +
+        'script>');
+    </script>
+</body>
+</html>
