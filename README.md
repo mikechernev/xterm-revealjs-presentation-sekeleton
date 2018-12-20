@@ -6,6 +6,9 @@
  - Press `S` to open speaker view
  - Enjoy!
  
+### Demo
+
+![Demo](demo.gif "This is how this works")
  
 ### Usage
 
